@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pick 'Em">
+<meta name="description" content="Weekly pick 'em for the Thelma's Boyz fantasy football league.">
+<title>Toni Wilson's Weekly Pick 'Em</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23101418'/><text x='16' y='23' font-size='18' font-family='Helvetica,Arial' font-weight='bold' fill='%23e0602a' text-anchor='middle'>P</text></svg>">
+<style>
+  :root {
+    --ink:#101418; --panel:#1a2029; --panel-2:#222b36; --line:#313c4a;
+    --chalk:#f2efe6; --muted:#93a1b0; --ember:#e0602a; --steel:#4e7fa6;
+    --brass:#c9a227; --good:#4e8a5b; --bad:#a6473c;
+  }
+  * , *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin:0; background:var(--ink); color:var(--chalk); font-size:16px; line-height:1.5;
+    font-family:"Helvetica Neue",Helvetica,Inter,Arial,sans-serif; -webkit-font-smoothing:antialiased;
+    padding: env(safe-area-inset-top) 0 calc(72px + env(safe-area-inset-bottom));
+  }
+  button { font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline:2px solid var(--ember); outline-offset:2px; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 16px; }
+
+  .mast { border-bottom:1px solid var(--line); padding:26px 0 18px; }
+  .mast h1 { margin:0; font-size:30px; line-height:1.02; font-weight:800; letter-spacing:-0.033em; }
+  .mast .league { margin:8px 0 0; color:var(--muted); font-size:13.5px; }
+
+  .hero { display:flex; gap:18px; align-items:flex-end; padding:22px 0 18px; }
+  .wknum { font-size:78px; font-weight:800; letter-spacing:-0.06em; line-height:0.78; font-variant-numeric:tabular-nums; }
+  .wklab { color:var(--muted); font-size:12.5px; margin-bottom:4px; }
+  .heroright { flex:1; min-width:0; padding-bottom:4px; }
+  .state { display:inline-block; padding:3px 9px; border-radius:3px; font-size:12.5px; font-weight:700; }
+  .state.open { background:var(--ember); color:#180c06; }
+  .state.soon { background:var(--steel); color:#06121c; }
+  .state.locked { background:var(--panel-2); color:var(--muted); border:1px solid var(--line); }
+  .state.final { background:var(--brass); color:#1a1403; }
+  .clock { font-variant-numeric:tabular-nums; font-size:21px; font-weight:700; letter-spacing:-0.02em; margin-top:7px; }
+  .clocksub { color:var(--muted); font-size:12.5px; margin-top:2px; }
+
+  .nav {
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    display:flex; gap:2px; background:var(--panel); border-top:1px solid var(--line);
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .nav button { flex:1; background:none; border:0; padding:11px 4px; border-radius:5px; font-size:13px; font-weight:600; color:var(--muted); }
+  .nav button[aria-selected="true"] { background:var(--panel-2); color:var(--chalk); }
+
+  .weekbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  select.field, input.field, .field {
+    background:var(--panel); color:var(--chalk); border:1px solid var(--line);
+    border-radius:5px; padding:11px 10px; font:inherit; width:100%;
+  }
+  .weekbar select { flex:1; }
+
+  .mlist { display:flex; flex-direction:column; gap:8px; }
+  .m { border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--panel); }
+  .mgrid { display:grid; grid-template-columns:1fr auto 1fr; align-items:stretch; }
+  .side { background:none; border:0; text-align:left; padding:14px 12px; display:block; transition:background 120ms ease; }
+  .side.right { text-align:right; }
+  .side:disabled { cursor:default; }
+  .tname { font-weight:700; font-size:14.5px; letter-spacing:-0.01em; }
+  .tmgr { color:var(--muted); font-size:12px; margin-top:2px; }
+  .side.sel { background:var(--ember); }
+  .side.sel .tmgr { color:#4a2a17; }
+  .side.sel .tname { color:#180c06; }
+  .atmark { align-self:center; color:var(--muted); font-size:11.5px; padding:0 6px; }
+  .mfoot { border-top:1px solid var(--line); padding:8px 12px; font-size:12.5px; color:var(--muted); display:flex; justify-content:space-between; gap:10px; }
+  .m.correct { border-color:var(--good); }
+  .m.wrong { border-color:var(--bad); }
+  .tag-correct { color:var(--good); font-weight:700; }
+  .tag-wrong { color:var(--bad); font-weight:700; }
+  .side.won { box-shadow:inset 3px 0 0 var(--brass); }
+  .side.won.right { box-shadow:inset -3px 0 0 var(--brass); }
+
+  .btn { background:var(--ember); color:#180c06; border:0; border-radius:5px; padding:14px 16px; font-weight:700; font-size:15px; width:100%; }
+  .btn:disabled { background:var(--panel-2); color:var(--muted); }
+  .btn.quiet { background:var(--panel-2); color:var(--chalk); border:1px solid var(--line); }
+  .btn.danger { background:none; color:var(--bad); border:1px solid var(--bad); }
+  .btn.sm { width:auto; padding:9px 12px; font-size:13px; }
+  .note { color:var(--muted); font-size:13px; }
+  .notice { border:1px solid var(--line); border-left:3px solid var(--steel); background:var(--panel); padding:12px 14px; border-radius:4px; font-size:13.5px; }
+  .notice.warn { border-left-color:var(--ember); }
+  .notice.ok { border-left-color:var(--good); }
+  .notice code { background:var(--panel-2); padding:1px 5px; border-radius:3px; font-size:12.5px; word-break:break-all; }
+  .stack { display:flex; flex-direction:column; gap:14px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  label.lbl { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+  hr.sep { border:0; border-top:1px solid var(--line); margin:26px 0 20px; }
+  h2.sec { font-size:17px; font-weight:700; letter-spacing:-0.02em; margin:0 0 10px; }
+  h3.sub { font-size:14px; font-weight:700; margin:18px 0 8px; }
+
+  .tablewrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .board { width:100%; border-collapse:collapse; font-size:14px; }
+  .board th { text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:0 8px 8px 0; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .board td { padding:11px 8px 11px 0; border-bottom:1px solid var(--line); vertical-align:baseline; white-space:nowrap; }
+  .board td.num, .board th.num { text-align:right; padding-right:0; font-variant-numeric:tabular-nums; }
+  .rank { color:var(--muted); font-variant-numeric:tabular-nums; width:26px; }
+  .lead .who { color:var(--brass); font-weight:700; }
+  .who { font-weight:600; }
+  .champ { border:1px solid var(--brass); border-radius:6px; padding:16px; background:linear-gradient(180deg, rgba(201,162,39,0.13), rgba(201,162,39,0)); }
+  .champ .name { font-size:26px; font-weight:800; letter-spacing:-0.03em; color:var(--brass); }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .chip { font-size:11.5px; border:1px solid var(--line); border-radius:3px; padding:2px 6px; color:var(--muted); }
+  .chip.hit { border-color:var(--good); color:var(--good); }
+  .entry { border-bottom:1px solid var(--line); padding:11px 0; }
+  .entry:last-child { border-bottom:0; }
+  .entry .en { font-weight:700; font-size:14.5px; }
+  .skel { color:var(--muted); font-size:13.5px; padding:18px 0; }
+  .hidden { display:none !important; }
+  .solo { background:var(--panel-2); border-bottom:1px solid var(--line); padding:9px 16px; font-size:12.5px; color:var(--muted); text-align:center; }
+  @media (max-width:420px) {
+    .wknum { font-size:62px; }
+    .tname { font-size:13.5px; }
+    .mast h1 { font-size:25px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div id="soloBar" class="solo hidden"></div>
+
+<div class="wrap">
+  <header class="mast">
+    <h1>Toni Wilson's Weekly Pick&nbsp;'Em</h1>
+    <p class="league">Thelma's Boyz fantasy league &nbsp;·&nbsp; 2026–27 season</p>
+  </header>
+
+  <div class="hero">
+    <div>
+      <div class="wklab" id="heroWkLab">Week</div>
+      <div class="wknum" id="heroWk">1</div>
+    </div>
+    <div class="heroright">
+      <span class="state locked" id="heroState">Loading</span>
+      <div class="clock" id="heroClock">—</div>
+      <div class="clocksub" id="heroSub">Checking the schedule…</div>
+    </div>
+  </div>
+
+  <section id="tab-picks"></section>
+  <section id="tab-board" class="hidden"></section>
+  <section id="tab-sched" class="hidden"></section>
+  <section id="tab-admin" class="hidden"></section>
+</div>
+
+<nav class="nav" role="tablist">
+  <button role="tab" data-tab="picks" aria-selected="true">Picks</button>
+  <button role="tab" data-tab="board" aria-selected="false">Standings</button>
+  <button role="tab" data-tab="sched" aria-selected="false">Schedule</button>
+  <button role="tab" data-tab="admin" aria-selected="false">Admin</button>
+</nav>
+
+<script>
+/* =====================================================================
+   SETUP — one line to edit.
+   Paste your Firebase Realtime Database URL between the quotes, e.g.
+   const DB_URL = "https://thelmas-boyz-default-rtdb.firebaseio.com";
+   Leave it empty to run in solo mode (picks saved only on this device).
+   ===================================================================== */
+const DB_URL = "https://thelmas-boyz-default-rtdb.firebaseio.com";
+/* ===================================================================== */
+
+(function () {
+  "use strict";
+
+  /* ============================ league data ============================ */
+  const TEAMS = {
+    dyn:   { name: "The Dynasty",             mgr: "Ryan Davis" },
+    hy:    { name: "Lil Hy",                  mgr: "Hyron Wilson Jr." },
+    nardo: { name: "Nardo UnderDogs",         mgr: "Austin Davis" },
+    zek:   { name: "Motor City Big Zek",      mgr: "Hyron Wilson" },
+    malik: { name: "Team MasterMalik",        mgr: "Malik Ward" },
+    rocks: { name: "Rocks EndZoneKingZ",      mgr: "Lamon Davis" },
+    unc:   { name: "Unc Unc",                 mgr: "Edwin Davis" },
+    hawks: { name: "Detroit Silverhawks",     mgr: "Caleb Davis" },
+    fifty: { name: "Team50 Grand 50 Grand",   mgr: "Corey Wilson" },
+    dev:   { name: "Team Dev Davisautogroup", mgr: "Devon Davis" }
+  };
+  const TEAM_IDS = Object.keys(TEAMS);
+
+  const SCHEDULE = {
+    1:  [["dyn","rocks"], ["hy","unc"], ["nardo","dev"], ["zek","hawks"], ["malik","fifty"]],
+    2:  [["rocks","fifty"], ["dyn","hy"], ["dev","unc"], ["hawks","nardo"], ["malik","zek"]],
+    3:  [["hy","rocks"], ["dyn","dev"], ["unc","hawks"], ["nardo","malik"], ["zek","fifty"]],
+    4:  [["rocks","dev"], ["hy","fifty"], ["hawks","dyn"], ["malik","unc"], ["nardo","zek"]],
+    5:  [["hawks","rocks"], ["hy","dev"], ["malik","dyn"], ["zek","unc"], ["nardo","fifty"]],
+    6:  [["rocks","malik"], ["hawks","hy"], ["dev","fifty"], ["dyn","zek"], ["nardo","unc"]],
+    7:  [["zek","rocks"], ["hy","malik"], ["hawks","dev"], ["nardo","dyn"], ["unc","fifty"]],
+    8:  [["rocks","nardo"], ["zek","hy"], ["dev","malik"], ["hawks","fifty"], ["dyn","unc"]],
+    9:  [["unc","rocks"], ["hy","nardo"], ["zek","dev"], ["malik","hawks"], ["dyn","fifty"]],
+    10: [["rocks","dyn"], ["unc","hy"], ["dev","nardo"], ["hawks","zek"], ["fifty","malik"]],
+    11: [["fifty","rocks"], ["hy","dyn"], ["unc","dev"], ["nardo","hawks"], ["zek","malik"]],
+    12: [["rocks","hy"], ["dev","dyn"], ["hawks","unc"], ["malik","nardo"], ["fifty","zek"]],
+    13: [["dev","rocks"], ["fifty","hy"], ["dyn","hawks"], ["unc","malik"], ["zek","nardo"]],
+    14: [["rocks","hawks"], ["dev","hy"], ["dyn","malik"], ["unc","zek"], ["fifty","nardo"]]
+  };
+  const REG_WEEKS = 14;
+  const PLAYOFF_LABEL = { 15: "Playoff round 1", 16: "Playoff round 2", 17: "Playoff round 3" };
+  const ALL_WEEKS = []; for (let w = 1; w <= 17; w++) ALL_WEEKS.push(w);
+
+  /* ============================ scheduling ============================ */
+  const WEEK1_THURS = [2026, 9, 10];
+  function etOffsetHours(utcMs) {
+    const dstEnd2026 = Date.UTC(2026, 10, 1, 6);
+    const dstStart2027 = Date.UTC(2027, 2, 14, 7);
+    return (utcMs < dstEnd2026 || utcMs >= dstStart2027) ? 4 : 5;
+  }
+  function thursdayUTCmidnight(week) {
+    return Date.UTC(WEEK1_THURS[0], WEEK1_THURS[1] - 1, WEEK1_THURS[2] + 7 * (week - 1));
+  }
+  function windowFor(week) {
+    const thu = thursdayUTCmidnight(week);
+    const tue = thu - 2 * 86400000;
+    return {
+      open: tue + (6 + etOffsetHours(tue)) * 3600000,
+      close: thu + (20 + etOffsetHours(thu)) * 3600000
+    };
+  }
+  let ET_FMT;
+  try {
+    ET_FMT = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Detroit", weekday: "short", month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit"
+    });
+  } catch (e) {
+    ET_FMT = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  function etString(ms) { return ET_FMT.format(new Date(ms)) + " ET"; }
+  function countdown(ms) {
+    if (ms < 0) ms = 0;
+    const d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24,
+          m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
+    const p = (n) => String(n).padStart(2, "0");
+    return (d > 0 ? d + "d " : "") + p(h) + ":" + p(m) + ":" + p(s);
+  }
+
+  /* ============================ data layer ============================ */
+  const ROOT = (DB_URL || "").trim().replace(/\/+$/, "");
+  const SHARED = ROOT.length > 0;
+  const NS = "pickem2026";
+
+  function normIdx(v) {
+    // Firebase turns {0:..,1:..} into an array; normalise back to a plain map.
+    const out = {};
+    if (!v) return out;
+    if (Array.isArray(v)) { v.forEach((x, i) => { if (x !== null && x !== undefined) out[i] = x; }); return out; }
+    Object.keys(v).forEach((k) => { if (v[k] !== null && v[k] !== undefined) out[k] = v[k]; });
+    return out;
+  }
+  function normMapOfIdx(v) {
+    const out = {};
+    if (!v) return out;
+    if (Array.isArray(v)) { v.forEach((x, i) => { if (x) out[i] = normIdx(x); }); return out; }
+    Object.keys(v).forEach((k) => { if (v[k]) out[k] = normIdx(v[k]); });
+    return out;
+  }
+  function fbKey(s) { return s.replace(/[.#$\[\]\/]/g, "_"); }
+
+  async function fb(path, method, body) {
+    const opts = { method: method || "GET", headers: { "Content-Type": "application/json" } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(ROOT + "/" + NS + path + ".json", opts);
+    if (!res.ok) throw new Error("Database said " + res.status);
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+  function lsGet(k, fallback) {
+    try { const v = localStorage.getItem(NS + ":" + k); return v ? JSON.parse(v) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function lsSet(k, v) {
+    try { localStorage.setItem(NS + ":" + k, JSON.stringify(v)); return true; } catch (e) { return false; }
+  }
+
+  const DB = {
+    async weekPicks(w) {
+      if (!SHARED) return lsGet("picks:w" + w, {}) || {};
+      const raw = await fb("/picks/w" + w);
+      const out = {};
+      if (raw) Object.keys(raw).forEach((k) => {
+        const e = raw[k];
+        if (e && e.name) out[k] = { name: e.name, picks: normIdx(e.picks), ts: e.ts || 0 };
+      });
+      return out;
+    },
+    async savePick(w, key, entry) {
+      if (!SHARED) {
+        const all = lsGet("picks:w" + w, {}) || {};
+        all[key] = entry;
+        return lsSet("picks:w" + w, all);
+      }
+      await fb("/picks/w" + w + "/" + fbKey(key), "PUT", entry);
+      return true;
+    },
+    async clearWeekPicks(w) {
+      if (!SHARED) return lsSet("picks:w" + w, {});
+      await fb("/picks/w" + w, "DELETE");
+      return true;
+    },
+    async results() {
+      if (!SHARED) return normMapOfIdx(lsGet("results", {}));
+      return normMapOfIdx(await fb("/results"));
+    },
+    async saveWeekResults(w, map) {
+      if (!SHARED) { const r = lsGet("results", {}) || {}; r[w] = map; return lsSet("results", r); }
+      await fb("/results/" + w, "PUT", map);
+      return true;
+    },
+    async clearWeekResults(w) {
+      if (!SHARED) { const r = lsGet("results", {}) || {}; delete r[w]; return lsSet("results", r); }
+      await fb("/results/" + w, "DELETE");
+      return true;
+    },
+    async settings() {
+      const raw = SHARED ? await fb("/settings") : lsGet("settings", {});
+      const s = raw || {};
+      const playoffs = {};
+      const p = s.playoffs || {};
+      Object.keys(p).forEach((k) => {
+        const v = p[k];
+        if (Array.isArray(v)) playoffs[k] = v.filter(Boolean);
+      });
+      return { overrides: s.overrides || {}, playoffs };
+    },
+    async saveOverride(w, v) {
+      if (!SHARED) {
+        const s = lsGet("settings", {}) || {};
+        s.overrides = s.overrides || {};
+        if (v) s.overrides[w] = v; else delete s.overrides[w];
+        return lsSet("settings", s);
+      }
+      if (v) await fb("/settings/overrides/" + w, "PUT", v);
+      else await fb("/settings/overrides/" + w, "DELETE");
+      return true;
+    },
+    async savePlayoffs(w, pairs) {
+      if (!SHARED) {
+        const s = lsGet("settings", {}) || {};
+        s.playoffs = s.playoffs || {};
+        s.playoffs[w] = pairs;
+        return lsSet("settings", s);
+      }
+      await fb("/settings/playoffs/" + w, "PUT", pairs);
+      return true;
+    }
+  };
+
+  /* ============================ state ============================ */
+  const state = {
+    tab: "picks", viewWeek: 1, currentWeek: 1, myName: "", draft: {},
+    picksByWeek: {}, results: {}, settings: { overrides: {}, playoffs: {} },
+    loadedWeeks: {}, isAdmin: false, adminWeek: 1, adminDraft: {}, booted: false, offline: false
+  };
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  const nameKey = (s) => fbKey(s.trim().toLowerCase().replace(/\s+/g, " "));
+
+  function matchupsFor(week) {
+    if (week <= REG_WEEKS) return SCHEDULE[week] || [];
+    const p = state.settings.playoffs[week];
+    return Array.isArray(p) ? p : [];
+  }
+  function statusFor(week) {
+    const ov = state.settings.overrides[week];
+    const win = windowFor(week);
+    const now = Date.now();
+    if (ov === "open") return { code: "open", win, forced: true };
+    if (ov === "closed") return { code: "locked", win, forced: true };
+    if (now < win.open) return { code: "soon", win };
+    if (now < win.close) return { code: "open", win };
+    return { code: "locked", win };
+  }
+  function autoCurrentWeek() {
+    const now = Date.now();
+    for (const w of ALL_WEEKS) {
+      if (w > REG_WEEKS && matchupsFor(w).length === 0) continue;
+      if (now < windowFor(w).close) return w;
+    }
+    for (let w = 17; w >= 1; w--) if (matchupsFor(w).length) return w;
+    return REG_WEEKS;
+  }
+  const weekLabel = (w) => w <= REG_WEEKS ? "Week " + w : PLAYOFF_LABEL[w] + " (Week " + w + ")";
+  const shortWeekLabel = (w) => w <= REG_WEEKS ? "Week " + w : "R" + (w - 14);
+
+  async function ensureWeekLoaded(week, force) {
+    if (state.loadedWeeks[week] && !force) return;
+    try {
+      state.picksByWeek[week] = await DB.weekPicks(week);
+      state.loadedWeeks[week] = true;
+      state.offline = false;
+    } catch (e) {
+      state.picksByWeek[week] = state.picksByWeek[week] || {};
+      state.offline = true;
+    }
+  }
+
+  /* ============================ hero ============================ */
+  function renderHero() {
+    const w = state.viewWeek, st = statusFor(w), ms = matchupsFor(w);
+    $("#heroWk").textContent = w;
+    $("#heroWkLab").textContent = w <= REG_WEEKS ? "Week" : PLAYOFF_LABEL[w];
+    const badge = $("#heroState"), clock = $("#heroClock"), sub = $("#heroSub");
+    const res = state.results[w] || {};
+    const scored = ms.length > 0 && Object.keys(res).length === ms.length;
+
+    if (!ms.length) {
+      badge.className = "state locked"; badge.textContent = "Matchups to be determined";
+      clock.textContent = "—";
+      sub.textContent = "An admin sets the bracket once the regular season ends.";
+      return;
+    }
+    if (st.code === "open") {
+      badge.className = "state open"; badge.textContent = "Picks are open";
+      clock.textContent = countdown(st.win.close - Date.now());
+      sub.textContent = st.forced ? "Held open by an admin."
+        : "Locks " + etString(st.win.close) + ", at kickoff of Thursday night football.";
+    } else if (st.code === "soon") {
+      badge.className = "state soon"; badge.textContent = "Opens soon";
+      clock.textContent = countdown(st.win.open - Date.now());
+      sub.textContent = "Opens " + etString(st.win.open) + ".";
+    } else {
+      badge.className = scored ? "state final" : "state locked";
+      badge.textContent = scored ? "Results are in" : "Picks are locked";
+      clock.textContent = scored ? "Final" : "Locked";
+      sub.textContent = scored ? "Scored by an admin."
+        : "Locked since " + etString(st.win.close) + ". Waiting on results.";
+    }
+  }
+
+  /* ============================ picks ============================ */
+  function weekOptions(selected) {
+    return ALL_WEEKS.map((w) => {
+      const has = matchupsFor(w).length > 0;
+      const tag = w === state.currentWeek ? " — this week" : "";
+      return '<option value="' + w + '"' + (w === selected ? " selected" : "") + (has ? "" : " disabled") + ">" +
+        esc(weekLabel(w) + (has ? tag : " — TBD")) + "</option>";
+    }).join("");
+  }
+  function sideHTML(idx, side, teamId, opts) {
+    const t = TEAMS[teamId];
+    const cls = ["side", side === "home" ? "right" : "",
+      state.draft[idx] === teamId ? "sel" : "", opts.winner === teamId ? "won" : ""].join(" ");
+    return '<button class="' + cls + '" data-m="' + idx + '" data-team="' + teamId + '"' +
+      (opts.locked ? " disabled" : "") + '><div class="tname">' + esc(t.name) +
+      '</div><div class="tmgr">' + esc(t.mgr) + "</div></button>";
+  }
+
+  function renderPicks() {
+    const w = state.viewWeek, st = statusFor(w), ms = matchupsFor(w);
+    const locked = st.code !== "open";
+    const entries = state.picksByWeek[w] || {};
+    const mine = state.myName ? entries[nameKey(state.myName)] : null;
+    const res = state.results[w] || {};
+
+    let html = '<div class="weekbar"><select class="field" id="wkSel" aria-label="Week">' + weekOptions(w) + "</select></div>";
+
+    if (state.offline) {
+      html += '<div class="notice warn" style="margin-bottom:14px">Can\'t reach the league database right now. Anything you submit won\'t be saved until the connection is back.</div>';
+    }
+    if (!ms.length) {
+      html += '<div class="notice">Matchups for ' + esc(weekLabel(w)) + " haven't been set yet. They go up once the regular season finishes and the bracket is known.</div>";
+      $("#tab-picks").innerHTML = html; wirePicks(); return;
+    }
+    if (st.code === "soon") {
+      html += '<div class="notice">Picks for ' + esc(weekLabel(w)) + " open " + esc(etString(st.win.open)) +
+        ". Come back then and you'll have until Thursday at 8:00 PM to lock them in.</div>";
+    } else if (locked) {
+      html += '<div class="notice">Picks for ' + esc(weekLabel(w)) + " are locked. Everyone's picks are shown below.</div>";
+    } else {
+      html += '<div class="stack"><div><label class="lbl" for="nameIn">Your name</label>' +
+        '<input class="field" id="nameIn" type="text" autocomplete="name" placeholder="First and last name" value="' +
+        esc(state.myName) + '"></div><p class="note">Use the same name every week so your picks land on the same line of the standings. Submitting again before the lock replaces your earlier picks.</p></div><hr class="sep">';
+    }
+
+    html += '<div class="mlist">';
+    ms.forEach((pair, i) => {
+      const winner = res[i];
+      const myPick = mine && mine.picks ? mine.picks[i] : null;
+      let cls = "m";
+      if (winner && myPick) cls += myPick === winner ? " correct" : " wrong";
+      html += '<div class="' + cls + '"><div class="mgrid">' +
+        sideHTML(i, "away", pair[0], { locked, winner }) + '<div class="atmark">at</div>' +
+        sideHTML(i, "home", pair[1], { locked, winner }) + "</div>";
+      if (winner || myPick) {
+        const left = winner ? "Winner: " + TEAMS[winner].name : "Not scored yet";
+        let right = "";
+        if (myPick) {
+          right = winner
+            ? '<span class="' + (myPick === winner ? "tag-correct" : "tag-wrong") + '">' +
+              (myPick === winner ? "You got it" : "You had " + esc(TEAMS[myPick].name)) + "</span>"
+            : "Your pick: " + esc(TEAMS[myPick].name);
+        }
+        html += '<div class="mfoot"><span>' + esc(left) + "</span><span>" + right + "</span></div>";
+      }
+      html += "</div>";
+    });
+    html += "</div>";
+
+    if (!locked) {
+      const done = ms.every((_, i) => state.draft[i]);
+      html += '<div class="stack" style="margin-top:16px"><button class="btn" id="submitBtn"' +
+        (done ? "" : " disabled") + ">" +
+        (done ? (mine ? "Update my picks" : "Lock in my picks") : "Pick all " + ms.length + " matchups") +
+        '</button><div id="saveMsg"></div></div>';
+    }
+
+    const list = Object.values(entries).sort((a, b) => a.name.localeCompare(b.name));
+    html += '<hr class="sep"><h2 class="sec">' + (locked ? "Everyone's picks" : "Submitted so far") + "</h2>";
+    if (!list.length) {
+      html += '<p class="note">Nobody has picked this week yet. Be first.</p>';
+    } else if (!locked) {
+      html += '<p class="note">' + list.map((e) => esc(e.name)).join(" · ") +
+        '</p><p class="note">Picks stay hidden until the Thursday lock.</p>';
+    } else {
+      html += list.map((e) => {
+        const scoredCount = ms.reduce((n, _, i) => n + (res[i] ? 1 : 0), 0);
+        const correct = ms.reduce((n, _, i) => n + (res[i] && e.picks[i] === res[i] ? 1 : 0), 0);
+        const chips = ms.map((_, i) => {
+          const p = e.picks[i], hit = res[i] && p === res[i];
+          return '<span class="chip' + (hit ? " hit" : "") + '">' + esc(p ? TEAMS[p].name : "—") + "</span>";
+        }).join("");
+        return '<div class="entry"><div class="en">' + esc(e.name) +
+          (scoredCount ? " · " + correct + " of " + scoredCount : "") +
+          '</div><div class="chips">' + chips + "</div></div>";
+      }).join("");
+    }
+
+    $("#tab-picks").innerHTML = html;
+    wirePicks();
+  }
+
+  function wirePicks() {
+    const sel = $("#wkSel");
+    if (sel) sel.onchange = async (e) => {
+      state.viewWeek = Number(e.target.value);
+      state.draft = {};
+      await ensureWeekLoaded(state.viewWeek);
+      hydrateDraft(); renderHero(); renderPicks();
+    };
+    const nameIn = $("#nameIn");
+    if (nameIn) {
+      nameIn.oninput = (e) => { state.myName = e.target.value; lsSet("myName", state.myName); };
+      nameIn.onblur = () => { hydrateDraft(); renderPicks(); };
+    }
+    document.querySelectorAll("#tab-picks .side").forEach((b) => {
+      b.onclick = () => { state.draft[Number(b.dataset.m)] = b.dataset.team; renderPicks(); };
+    });
+    const sb = $("#submitBtn");
+    if (sb) sb.onclick = submitPicks;
+  }
+
+  function hydrateDraft() {
+    const entries = state.picksByWeek[state.viewWeek] || {};
+    const mine = state.myName ? entries[nameKey(state.myName)] : null;
+    if (mine && mine.picks) state.draft = Object.assign({}, mine.picks);
+  }
+
+  async function submitPicks() {
+    const w = state.viewWeek, ms = matchupsFor(w), msg = $("#saveMsg");
+    const name = (state.myName || "").trim();
+    if (name.length < 2) {
+      msg.innerHTML = '<div class="notice warn">Add your name first — the standings need something to call you.</div>';
+      return;
+    }
+    if (statusFor(w).code !== "open") {
+      msg.innerHTML = '<div class="notice warn">Picks just locked for this week. Nothing was saved.</div>';
+      renderPicks(); return;
+    }
+    const btn = $("#submitBtn");
+    btn.disabled = true; btn.textContent = "Saving…";
+    const entry = { name, picks: Object.assign({}, state.draft), ts: Date.now() };
+    try {
+      await DB.savePick(w, nameKey(name), entry);
+      state.picksByWeek[w] = state.picksByWeek[w] || {};
+      state.picksByWeek[w][nameKey(name)] = entry;
+      state.offline = false;
+      lsSet("myName", name);
+      renderPicks();
+      $("#saveMsg").innerHTML = '<div class="notice ok">Picks saved for ' + esc(weekLabel(w)) +
+        ". You can change them until " + esc(etString(statusFor(w).win.close)) + ".</div>";
+    } catch (e) {
+      state.offline = true;
+      renderPicks();
+      $("#saveMsg").innerHTML = '<div class="notice warn">That didn\'t save — ' + esc(e.message) + ". Check your connection and try again.</div>";
+    }
+  }
+
+  /* ============================ standings ============================ */
+  function scoredWeeks() {
+    return ALL_WEEKS.filter((w) => matchupsFor(w).length > 0 && Object.keys(state.results[w] || {}).length > 0);
+  }
+
+  async function renderBoard() {
+    const el = $("#tab-board"), weeks = scoredWeeks();
+    if (!weeks.length) {
+      el.innerHTML = '<div class="notice">No weeks have been scored yet. Once an admin enters a week\'s winners, the standings fill in here.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="skel">Adding up ' + weeks.length + " week" + (weeks.length > 1 ? "s" : "") + "…</div>";
+    for (const w of weeks) await ensureWeekLoaded(w);
+
+    const people = {};
+    weeks.forEach((w) => {
+      const ms = matchupsFor(w), res = state.results[w] || {}, entries = state.picksByWeek[w] || {};
+      const perWeek = [];
+      Object.keys(entries).forEach((k) => {
+        const e = entries[k];
+        let c = 0, of = 0;
+        ms.forEach((_, i) => { if (res[i]) { of++; if (e.picks[i] === res[i]) c++; } });
+        if (!people[k]) people[k] = { name: e.name, total: 0, played: 0, weeks: {}, weekWins: 0 };
+        people[k].name = e.name;
+        people[k].total += c; people[k].played += of; people[k].weeks[w] = c;
+        perWeek.push({ k, c });
+      });
+      const best = perWeek.reduce((m, x) => Math.max(m, x.c), -1);
+      if (best > 0) perWeek.forEach((x) => { if (x.c === best) people[x.k].weekWins++; });
+    });
+
+    const rows = Object.values(people).sort((a, b) =>
+      b.total - a.total || b.weekWins - a.weekWins || a.name.localeCompare(b.name));
+
+    const allDone = ALL_WEEKS.every((w) => {
+      const ms = matchupsFor(w);
+      if (!ms.length) return w > REG_WEEKS;
+      return Object.keys(state.results[w] || {}).length === ms.length;
+    });
+
+    let html = "";
+    if (allDone && rows.length) {
+      const champ = rows[0];
+      const tied = rows.filter((r) => r.total === champ.total && r.weekWins === champ.weekWins);
+      html += '<div class="champ"><div class="note">Season champion</div><div class="name">' +
+        esc(tied.map((t) => t.name).join(" & ")) + '</div><div class="note">' +
+        champ.total + " correct picks out of " + champ.played + " · " + champ.weekWins +
+        " weekly win" + (champ.weekWins === 1 ? "" : "s") + '</div></div><hr class="sep">';
+    }
+
+    html += '<h2 class="sec">Standings</h2><div class="tablewrap"><table class="board"><thead><tr>' +
+      '<th class="rank"></th><th>Player</th><th class="num">Correct</th><th class="num">Of</th>' +
+      '<th class="num">Pct</th><th class="num">Wk wins</th></tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const pct = r.played ? Math.round((r.total / r.played) * 100) : 0;
+      html += '<tr class="' + (i === 0 ? "lead" : "") + '"><td class="rank">' + (i + 1) +
+        '</td><td class="who">' + esc(r.name) + '</td><td class="num">' + r.total +
+        '</td><td class="num">' + r.played + '</td><td class="num">' + pct +
+        '%</td><td class="num">' + r.weekWins + "</td></tr>";
+    });
+    html += "</tbody></table></div>";
+
+    html += '<h3 class="sub">Week by week</h3><div class="tablewrap"><table class="board"><thead><tr><th>Player</th>' +
+      weeks.map((w) => '<th class="num">' + esc(shortWeekLabel(w)) + "</th>").join("") + "</tr></thead><tbody>" +
+      rows.map((r) => '<tr><td class="who">' + esc(r.name) + "</td>" +
+        weeks.map((w) => '<td class="num">' + (r.weeks[w] === undefined ? "–" : r.weeks[w]) + "</td>").join("") +
+        "</tr>").join("") + "</tbody></table></div>";
+    html += '<p class="note" style="margin-top:12px">A weekly win goes to whoever gets the most right that week. Ties share it, and week wins break a tie in the season race.</p>' +
+      '<div class="row" style="margin-top:14px"><button class="btn quiet sm" id="refreshBoard">Refresh</button></div>';
+
+    el.innerHTML = html;
+    $("#refreshBoard").onclick = async () => {
+      state.loadedWeeks = {};
+      try { state.results = await DB.results(); } catch (e) {}
+      renderBoard();
+    };
+  }
+
+  /* ============================ schedule ============================ */
+  function renderSched() {
+    let html = '<h2 class="sec">Season schedule</h2><p class="note" style="margin-bottom:16px">Picks open Tuesday at 6:00 AM and lock Thursday at 8:00 PM, Eastern.</p>';
+    ALL_WEEKS.forEach((w) => {
+      const ms = matchupsFor(w), st = statusFor(w), res = state.results[w] || {};
+      const scored = ms.length && Object.keys(res).length === ms.length;
+      const badge = !ms.length ? '<span class="state locked">TBD</span>'
+        : scored ? '<span class="state final">Final</span>'
+        : st.code === "open" ? '<span class="state open">Open now</span>'
+        : st.code === "soon" ? '<span class="state soon">Opens ' + esc(etString(st.win.open)) + "</span>"
+        : '<span class="state locked">Locked</span>';
+      html += '<h3 class="sub">' + esc(weekLabel(w)) + " &nbsp;" + badge + "</h3>";
+      if (!ms.length) { html += '<p class="note">Matchups to be determined.</p>'; return; }
+      html += '<div class="mlist">' + ms.map((pair, i) => {
+        const win = res[i];
+        const nm = (id) => esc(TEAMS[id].name) + (win === id ? " ✓" : "");
+        return '<div class="m"><div class="mgrid">' +
+          '<div class="side"><div class="tname">' + nm(pair[0]) + '</div><div class="tmgr">' + esc(TEAMS[pair[0]].mgr) + "</div></div>" +
+          '<div class="atmark">at</div>' +
+          '<div class="side right"><div class="tname">' + nm(pair[1]) + '</div><div class="tmgr">' + esc(TEAMS[pair[1]].mgr) + "</div></div>" +
+          "</div></div>";
+      }).join("") + "</div>";
+    });
+    $("#tab-sched").innerHTML = html;
+  }
+
+  /* ============================ admin ============================ */
+  const ADMIN_PASS = "ToniPicksFTW";
+
+  function renderAdmin() {
+    const el = $("#tab-admin");
+    if (!state.isAdmin) {
+      el.innerHTML = '<h2 class="sec">Admin</h2><p class="note" style="margin-bottom:14px">Enter the league password to record weekly winners, adjust the lock, and build the playoff bracket.</p>' +
+        '<div class="stack"><input class="field" id="pw" type="password" placeholder="Password" autocomplete="current-password">' +
+        '<button class="btn" id="pwBtn">Unlock admin tools</button><div id="pwMsg"></div></div>';
+      $("#pwBtn").onclick = () => {
+        if ($("#pw").value === ADMIN_PASS) { state.isAdmin = true; state.adminWeek = state.currentWeek; loadAdminDraft(); renderAdmin(); }
+        else $("#pwMsg").innerHTML = '<div class="notice warn">That password doesn\'t match. Try again.</div>';
+      };
+      $("#pw").onkeydown = (e) => { if (e.key === "Enter") $("#pwBtn").click(); };
+      return;
+    }
+
+    const w = state.adminWeek, ms = matchupsFor(w), ov = state.settings.overrides[w] || "auto";
+    let html = '<h2 class="sec">Admin</h2><div class="weekbar"><select class="field" id="adWk" aria-label="Week to manage">' +
+      ALL_WEEKS.map((x) => '<option value="' + x + '"' + (x === w ? " selected" : "") + ">" + esc(weekLabel(x)) + "</option>").join("") +
+      "</select></div>";
+
+    if (w > REG_WEEKS) {
+      html += '<h3 class="sub">Matchups for ' + esc(weekLabel(w)) + '</h3><p class="note" style="margin-bottom:10px">Set up to four matchups. Leave a row blank to skip it.</p>';
+      for (let i = 0; i < 4; i++) {
+        const pair = ms[i] || ["", ""];
+        const opts = (v) => '<option value="">—</option>' + TEAM_IDS.map((t) =>
+          '<option value="' + t + '"' + (v === t ? " selected" : "") + ">" + esc(TEAMS[t].name) + "</option>").join("");
+        html += '<div class="row" style="margin-bottom:8px"><select class="field poAway" style="flex:1;width:auto">' + opts(pair[0]) +
+          '</select><select class="field poHome" style="flex:1;width:auto">' + opts(pair[1]) + "</select></div>";
+      }
+      html += '<button class="btn quiet" id="savePO" style="margin-bottom:6px">Save these matchups</button><div id="poMsg"></div><hr class="sep">';
+    }
+
+    html += '<h3 class="sub">Winners for ' + esc(weekLabel(w)) + "</h3>";
+    if (!ms.length) {
+      html += '<p class="note">Set the matchups first.</p>';
+    } else {
+      html += '<p class="note" style="margin-bottom:10px">Tap the team that won each matchup, then save. Saving updates the standings for everyone.</p><div class="mlist">';
+      ms.forEach((pair, i) => {
+        const cur = state.adminDraft[i];
+        const btn = (id, side) => '<button class="side ' + (side === "home" ? "right " : "") +
+          (cur === id ? "sel" : "") + '" data-ai="' + i + '" data-at="' + id + '"><div class="tname">' +
+          esc(TEAMS[id].name) + '</div><div class="tmgr">' + esc(TEAMS[id].mgr) + "</div></button>";
+        html += '<div class="m"><div class="mgrid">' + btn(pair[0], "away") +
+          '<div class="atmark">at</div>' + btn(pair[1], "home") + "</div></div>";
+      });
+      html += '</div><div class="stack" style="margin-top:14px"><button class="btn" id="saveRes">Save winners for ' +
+        esc(shortWeekLabel(w)) + '</button><div class="row"><button class="btn quiet sm" id="clearRes">Clear this week\'s winners</button></div><div id="resMsg"></div></div>';
+    }
+
+    html += '<hr class="sep"><h3 class="sub">Voting window</h3><p class="note" style="margin-bottom:10px">' +
+      esc(weekLabel(w)) + " runs automatically: opens " + esc(etString(windowFor(w).open)) +
+      ", locks " + esc(etString(windowFor(w).close)) + ". Override it only if you need to.</p>" +
+      '<div class="row"><button class="btn quiet sm" data-ov="auto">Automatic' + (ov === "auto" ? " ✓" : "") + "</button>" +
+      '<button class="btn quiet sm" data-ov="open">Force open' + (ov === "open" ? " ✓" : "") + "</button>" +
+      '<button class="btn quiet sm" data-ov="closed">Force locked' + (ov === "closed" ? " ✓" : "") + "</button></div>";
+
+    html += '<hr class="sep"><h3 class="sub">Clear entries</h3><p class="note" style="margin-bottom:10px">Deletes every submitted pick for ' +
+      esc(weekLabel(w)) + ". There's no undo.</p><button class=\"btn danger sm\" id=\"wipe\">Delete all picks for " +
+      esc(shortWeekLabel(w)) + '</button><div id="wipeMsg"></div>' +
+      '<hr class="sep"><h3 class="sub">Where the data lives</h3><p class="note">' +
+      (SHARED ? "Connected to the league database at <code>" + esc(ROOT) + "</code>. Everyone on the link shares the same picks and standings."
+              : "Solo mode — picks are saved only in this browser. Add your database URL to the <code>DB_URL</code> line near the top of index.html to share across the league.") +
+      '</p><hr class="sep"><button class="btn quiet sm" id="lockAdmin">Sign out of admin</button>';
+
+    el.innerHTML = html;
+    wireAdmin();
+  }
+
+  function loadAdminDraft() { state.adminDraft = Object.assign({}, state.results[state.adminWeek] || {}); }
+
+  function wireAdmin() {
+    const sel = $("#adWk");
+    if (sel) sel.onchange = (e) => { state.adminWeek = Number(e.target.value); loadAdminDraft(); renderAdmin(); };
+
+    document.querySelectorAll("#tab-admin .side[data-ai]").forEach((b) => {
+      b.onclick = () => { state.adminDraft[Number(b.dataset.ai)] = b.dataset.at; renderAdmin(); };
+    });
+
+    const saveRes = $("#saveRes");
+    if (saveRes) saveRes.onclick = async () => {
+      saveRes.disabled = true; saveRes.textContent = "Saving…";
+      try {
+        await DB.saveWeekResults(state.adminWeek, Object.assign({}, state.adminDraft));
+        state.results[state.adminWeek] = Object.assign({}, state.adminDraft);
+        renderAdmin();
+        $("#resMsg").innerHTML = '<div class="notice ok">Winners saved. The standings just updated for everyone.</div>';
+      } catch (e) {
+        renderAdmin();
+        $("#resMsg").innerHTML = '<div class="notice warn">That didn\'t save — ' + esc(e.message) + ".</div>";
+      }
+      renderHero();
+    };
+
+    const clearRes = $("#clearRes");
+    if (clearRes) clearRes.onclick = async () => {
+      try {
+        await DB.clearWeekResults(state.adminWeek);
+        delete state.results[state.adminWeek];
+        state.adminDraft = {};
+        renderAdmin();
+        $("#resMsg").innerHTML = '<div class="notice">Winners cleared for this week.</div>';
+      } catch (e) {
+        renderAdmin();
+        $("#resMsg").innerHTML = '<div class="notice warn">That didn\'t save — ' + esc(e.message) + ".</div>";
+      }
+    };
+
+    document.querySelectorAll("#tab-admin button[data-ov]").forEach((b) => {
+      b.onclick = async () => {
+        const v = b.dataset.ov;
+        try {
+          await DB.saveOverride(state.adminWeek, v === "auto" ? null : v);
+          if (v === "auto") delete state.settings.overrides[state.adminWeek];
+          else state.settings.overrides[state.adminWeek] = v;
+        } catch (e) {}
+        renderAdmin(); renderHero();
+      };
+    });
+
+    const savePO = $("#savePO");
+    if (savePO) savePO.onclick = async () => {
+      const aw = [].map.call(document.querySelectorAll(".poAway"), (s) => s.value);
+      const hm = [].map.call(document.querySelectorAll(".poHome"), (s) => s.value);
+      const pairs = [];
+      for (let i = 0; i < aw.length; i++) if (aw[i] && hm[i] && aw[i] !== hm[i]) pairs.push([aw[i], hm[i]]);
+      try {
+        await DB.savePlayoffs(state.adminWeek, pairs);
+        state.settings.playoffs[state.adminWeek] = pairs;
+        renderAdmin();
+        $("#poMsg").innerHTML = '<div class="notice ok">Saved ' + pairs.length + " matchup" +
+          (pairs.length === 1 ? "" : "s") + " for this round.</div>";
+        renderSched();
+      } catch (e) {
+        renderAdmin();
+        $("#poMsg").innerHTML = '<div class="notice warn">That didn\'t save — ' + esc(e.message) + ".</div>";
+      }
+    };
+
+    const wipe = $("#wipe");
+    if (wipe) wipe.onclick = async () => {
+      if (wipe.dataset.armed !== "1") { wipe.dataset.armed = "1"; wipe.textContent = "Tap again to confirm"; return; }
+      try {
+        await DB.clearWeekPicks(state.adminWeek);
+        state.picksByWeek[state.adminWeek] = {};
+        renderAdmin();
+        $("#wipeMsg").innerHTML = '<div class="notice">All picks deleted for this week.</div>';
+      } catch (e) {
+        renderAdmin();
+        $("#wipeMsg").innerHTML = '<div class="notice warn">That didn\'t save — ' + esc(e.message) + ".</div>";
+      }
+    };
+
+    const lockAdmin = $("#lockAdmin");
+    if (lockAdmin) lockAdmin.onclick = () => { state.isAdmin = false; renderAdmin(); };
+  }
+
+  /* ============================ tabs / boot ============================ */
+  function showTab(t) {
+    state.tab = t;
+    document.querySelectorAll(".nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+    ["picks", "board", "sched", "admin"].forEach((k) => $("#tab-" + k).classList.toggle("hidden", k !== t));
+    window.scrollTo({ top: 0 });
+    if (t === "board") renderBoard();
+    if (t === "sched") renderSched();
+    if (t === "admin") renderAdmin();
+  }
+  document.querySelectorAll(".nav button").forEach((b) => { b.onclick = () => showTab(b.dataset.tab); });
+
+  async function boot() {
+    state.myName = lsGet("myName", "") || "";
+    if (!SHARED) {
+      const bar = $("#soloBar");
+      bar.classList.remove("hidden");
+      bar.innerHTML = "Solo mode — picks save only on this device. Add your database URL to the DB_URL line in index.html to go league-wide.";
+    }
+    try {
+      const [settings, results] = await Promise.all([DB.settings(), DB.results()]);
+      state.settings = settings; state.results = results;
+    } catch (e) { state.offline = true; }
+    state.currentWeek = autoCurrentWeek();
+    state.viewWeek = state.currentWeek;
+    await ensureWeekLoaded(state.viewWeek);
+    hydrateDraft();
+    state.booted = true;
+    renderHero(); renderPicks();
+  }
+
+  setInterval(() => {
+    if (!state.booted) return;
+    renderHero();
+    const open = statusFor(state.viewWeek).code === "open";
+    if (state.tab === "picks" && open !== !!$("#submitBtn")) renderPicks();
+  }, 1000);
+
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden || !state.booted) return;
+    try {
+      const [settings, results] = await Promise.all([DB.settings(), DB.results()]);
+      state.settings = settings; state.results = results; state.offline = false;
+    } catch (e) { state.offline = true; }
+    await ensureWeekLoaded(state.viewWeek, true);
+    hydrateDraft();
+    renderHero();
+    if (state.tab === "picks") renderPicks();
+  });
+
+  $("#tab-picks").innerHTML = '<div class="skel">Loading this week\'s matchups…</div>';
+  boot();
+})();
+</script>
+</body>
+</html>
